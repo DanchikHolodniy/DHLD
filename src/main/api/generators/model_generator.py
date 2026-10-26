@@ -1,8 +1,12 @@
 import uuid
 import random
 import rstr
+
 from typing import Any, get_type_hints, get_origin, Annotated, get_args
+
 from src.main.api.generators.creation_rule import CreationRule
+
+
 
 
 class RandomModelGenerator:
@@ -31,6 +35,7 @@ class RandomModelGenerator:
             init_data[field_name] = value
         return cls(**init_data)
 
+
     @staticmethod
     def _generate_from_regex(regex: str, field_type: type) -> Any:
         generated = rstr.xeger(regex)
@@ -39,6 +44,7 @@ class RandomModelGenerator:
         if field_type == float:
             return float(generated)
         return generated
+
 
     @staticmethod
     def _generate_value(field_type: type) -> Any:

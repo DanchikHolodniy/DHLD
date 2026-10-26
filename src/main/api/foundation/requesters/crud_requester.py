@@ -3,9 +3,12 @@ import allure
 
 from typing import Optional
 from requests import Response
+
 from src.main.api.configs.config import Config
 from src.main.api.foundation.http_requester import HttpRequester
 from src.main.api.models.base_model import BaseModel
+
+
 
 
 class CrudRequester(HttpRequester):
@@ -29,6 +32,7 @@ class CrudRequester(HttpRequester):
 
         self.response_spec(response)
         return response
+
 
     def delete(self, user_id: int) -> Response:
         response = requests.delete(
