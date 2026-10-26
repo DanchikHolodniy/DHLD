@@ -31,49 +31,49 @@ class EndpointConfiguration:
 
 class Endpoint(Enum):
     ADMIN_CREATE_USER = EndpointConfiguration(
-        url = "/admin/create",
-        request_model = CreateUserRequest,
-        response_model = CreateResponse,
+        url="/admin/create",
+        request_model=CreateUserRequest,
+        response_model=CreateResponse,
     )
 
     ADMIN_DELETE_USER = EndpointConfiguration(
-        url = "/admin/users",
-        request_model = None,
-        response_model = None
+        url="/admin/users",
+        request_model=None,
+        response_model=None
     )
 
     LOGIN_USER = EndpointConfiguration(
-        url = "/auth/token/login",
-        request_model = Login,
-        response_model = LoginUserResponse,
+        url="/auth/token/login",
+        request_model=Login,
+        response_model=LoginUserResponse,
     )
 
     CREATE_ACCOUNT = EndpointConfiguration(
-        url = "/account/create",
-        request_model = None,
-        response_model = AccountResponse,
+        url="/account/create",
+        request_model=None,
+        response_model=AccountResponse,
     )
 
     DEPOSIT_ACCOUNT = EndpointConfiguration(
-        url = "/account/deposit",
-        request_model = DepositRequest,
-        response_model = DepositResponse,
+        url="/account/deposit",
+        request_model=DepositRequest,
+        response_model=DepositResponse,
     )
 
     TRANSFER_ACCOUNT = EndpointConfiguration(
-        url = "/account/transfer",
-        request_model = TransferRequest,
-        response_model = TransferResponse,
+        url="/account/transfer",
+        request_model=TransferRequest,
+        response_model=TransferResponse,
     )
 
     CREDIT_ACCOUNT = EndpointConfiguration(
-        url = "/credit/request",
-        request_model = CreditAccountRequest,
-        response_model = CreditAccountResponse,
+        url="/credit/request",
+        request_model=CreditAccountRequest,
+        response_model=CreditAccountResponse,
     )
 
     CREDIT_REPAY_ACCOUNT = EndpointConfiguration(
-        url = "/credit/repay",
-        request_model = CreditRepayRequest,
-        response_model = CreditRepayResponse,
+        url="/credit/repay",
+        request_model=CreditRepayRequest,
+        response_model=CreditRepayResponse,
     )

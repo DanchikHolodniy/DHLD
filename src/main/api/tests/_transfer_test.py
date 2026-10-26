@@ -1,7 +1,11 @@
 import pytest
 
 from sqlalchemy.orm import Session
+
+from src.main.api.classes.api_manager import ApiManager
 from src.main.api.db.crud.transaction_crud import TransactionCrudDb as TransactionCrud
+
+
 
 
 @pytest.mark.api
@@ -12,36 +16,16 @@ class TestTransfer:
             (1000),
         ],
     )
-    def test_transfer(
-        self,
-        db_session: Session,
-        api_manager,
-        create_user_request,
-        second_create_user_request,
-        amount,
-    ):
-        first_account = api_manager.user_steps.create_account(create_user_request)
-        second_account = api_manager.user_steps.create_account(
-            second_create_user_request
-        )
-        first_account_deposit = api_manager.user_steps.deposit(
-            create_user_request, account_id=first_account.id, amount=amount
-        )
+    def test_transfer(self, db_session: Session, api_manager: ApiManager, create_two_users_with_accounts_deposit: tuple, amount: int):
+        user, first_account, second_account = create_two_users_with_accounts_deposit(amount)
 
-        assert first_account_deposit.balance == amount
+        first_to_second_account_deposit = api_manager.user_steps.transfer(user, first_account.id, second_account.id, amount=amount)
+        assert first_to_second_account_deposit.fromAccountIdBalance == 0, "Баланс отправителя не стал 0"
 
-        first_to_second_deposit = api_manager.user_steps.transfer(
-            create_user_request, first_account.id, second_account.id, amount=amount
-        )
-
-        assert first_to_second_deposit.fromAccountIdBalance == 0
-
-        transaction_from_db = TransactionCrud.get_transaction_by_from_account_id(
-            db_session, first_to_second_deposit.fromAccountId
-        )
-
+        transaction_from_db = TransactionCrud.get_transaction_by_from_account_id(db_session, first_to_second_account_deposit.fromAccountId)
         assert transaction_from_db is not None, "Транзакция не найдена в DB"
-        assert transaction_from_db.amount == amount
+        assert transaction_from_db.amount == amount, "Сумма перевода не совпадает с DB"
+
 
     @pytest.mark.parametrize(
         "amount,transfer",
@@ -49,81 +33,31 @@ class TestTransfer:
             (1000, 600),
         ],
     )
-    def test_transfer_my_accounts(
-        self,
-        db_session: Session,
-        api_manager,
-        create_user_request,
-        second_create_user_request,
-        amount,
-        transfer,
-    ):
-        my_first_account = api_manager.user_steps.create_account(create_user_request)
-        my_second_account = api_manager.user_steps.create_account(create_user_request)
-        my_first_account_deposit = api_manager.user_steps.deposit(
-            create_user_request, account_id=my_first_account.id, amount=amount
-        )
+    def test_transfer_my_accounts(self, db_session: Session, api_manager: ApiManager, create_user_with_two_accounts_deposit: tuple, amount: int, transfer: int):
+        user, my_first_account, my_second_account = create_user_with_two_accounts_deposit(amount)
 
-        assert my_first_account_deposit.balance == amount
+        transfer_between_my_accounts = api_manager.user_steps.transfer(user, my_first_account.id, my_second_account.id, amount=transfer)
+        assert transfer_between_my_accounts.fromAccountIdBalance == amount - transfer, "Баланс отправителя не совпадает с ожидаемым"
 
-        transfer_between_my_accounts = api_manager.user_steps.transfer(
-            create_user_request,
-            my_first_account.id,
-            my_second_account.id,
-            amount=transfer,
-        )
-
-        assert transfer_between_my_accounts.fromAccountIdBalance == amount - transfer
-
-        transaction_from_db = TransactionCrud.get_transaction_by_from_account_id(
-            db_session, transfer_between_my_accounts.fromAccountId
-        )
-
+        transaction_from_db = TransactionCrud.get_transaction_by_from_account_id(db_session, transfer_between_my_accounts.fromAccountId)
         assert transaction_from_db is not None, "Транзакция не найдена в DB"
-        assert transaction_from_db.amount == transfer
-        assert (
-            transaction_from_db.to_account_id == my_second_account.id
-        ), "Деньги ушли не на тот счёт"
+        assert transaction_from_db.amount == transfer, "Сумма перевода не совпадает с DB"
+        assert transaction_from_db.to_account_id == my_second_account.id, "id аккаунта не совпадает с DB"
+
 
     @pytest.mark.parametrize(
-        "valid_amount_deposit, valid_transfer", [(5000, 500), (5000, 10000)]
+        "valid_amount_deposit, valid_transfer",
+        [
+            (5000, 500),
+            (10000, 10000)
+        ]
     )
-    def test_transfer_range_valid(
-        self,
-        api_manager,
-        create_user_request,
-        second_create_user_request,
-        valid_amount_deposit,
-        valid_transfer,
-    ):
-        first_account = api_manager.user_steps.create_account(create_user_request)
-        second_account = api_manager.user_steps.create_account(
-            second_create_user_request
-        )
-        first_account_deposit = api_manager.user_steps.deposit(
-            create_user_request,
-            account_id=first_account.id,
-            amount=valid_amount_deposit,
-        )
-        first_account_deposit_double = api_manager.user_steps.deposit(
-            create_user_request,
-            account_id=first_account.id,
-            amount=valid_amount_deposit,
-        )
+    def test_transfer_range_valid(self, api_manager: ApiManager, create_two_users_with_accounts_deposit: tuple, valid_amount_deposit: int, valid_transfer: int):
+        user, first_account, second_account = create_two_users_with_accounts_deposit(valid_amount_deposit)
 
-        assert first_account_deposit_double.balance == valid_amount_deposit * 2
+        first_to_second_transfer = api_manager.user_steps.transfer(user, first_account.id, second_account.id, amount=valid_transfer)
+        assert first_to_second_transfer.fromAccountIdBalance == valid_amount_deposit - valid_transfer
 
-        first_to_second_deposit = api_manager.user_steps.transfer(
-            create_user_request,
-            first_account.id,
-            second_account.id,
-            amount=valid_transfer,
-        )
-
-        assert (
-            first_to_second_deposit.fromAccountIdBalance
-            == first_account_deposit_double.balance - valid_transfer
-        )
 
     @pytest.mark.parametrize(
         "invalid_amount_deposit",
@@ -132,15 +66,10 @@ class TestTransfer:
             9001,
         ],
     )
-    def test_transfer_range_deposit_invalid(
-        self, api_manager, create_user_request, invalid_amount_deposit
-    ):
-        first_account = api_manager.user_steps.create_account(create_user_request)
-        first_account_deposit = api_manager.user_steps.deposit_invalid(
-            create_user_request,
-            account_id=first_account.id,
-            amount=invalid_amount_deposit,
-        )
+    def test_transfer_range_deposit_invalid(self, api_manager: ApiManager, create_user_with_one_account: tuple, invalid_amount_deposit: int):
+        user, account = create_user_with_one_account
+        invalid_deposit = api_manager.user_steps.deposit_invalid(user, account_id=account.id, amount=invalid_amount_deposit)
+
 
     @pytest.mark.parametrize(
         "valid_amount_deposit, invalid_transfer",
@@ -149,26 +78,6 @@ class TestTransfer:
             (9000, 10001),
         ],
     )
-    def test_transfer_range_transfer_invalid(
-        self,
-        api_manager,
-        create_user_request,
-        second_create_user_request,
-        valid_amount_deposit,
-        invalid_transfer,
-    ):
-        first_account = api_manager.user_steps.create_account(create_user_request)
-        second_account = api_manager.user_steps.create_account(
-            second_create_user_request
-        )
-        first_account_deposit = api_manager.user_steps.deposit(
-            create_user_request,
-            account_id=first_account.id,
-            amount=valid_amount_deposit,
-        )
-        first_to_second_deposit = api_manager.user_steps.transfer_invalid(
-            create_user_request,
-            first_account.id,
-            second_account.id,
-            amount=invalid_transfer,
-        )
+    def test_transfer_range_transfer_invalid(self, api_manager: ApiManager, create_user_with_two_accounts_deposit: tuple, valid_amount_deposit: int, invalid_transfer: int):
+        user, my_first_account, my_second_account = create_user_with_two_accounts_deposit(valid_amount_deposit)
+        first_to_second_transfer = api_manager.user_steps.transfer_invalid(user, my_first_account.id, my_second_account.id, amount=invalid_transfer)

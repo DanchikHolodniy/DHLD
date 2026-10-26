@@ -2,10 +2,11 @@ from pathlib import Path
 from typing import Any
 
 
+
+
 class Config:
     _isinstance = None
     _dictionary = {}
-
     def __new__(cls):
         if cls._isinstance is None:
             cls._isinstance = super(Config, cls).__new__(cls)
@@ -18,6 +19,7 @@ class Config:
                         key, value = line.split("=")
                         cls._dictionary[key] = value.strip()
         return cls._isinstance
+
 
     @staticmethod
     def fetch(key: str, default_value: Any = None) -> Any:
